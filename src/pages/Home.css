@@ -1,0 +1,46 @@
+/* src/pages/Home.css */
+.home-container {
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  min-height: 200vh;
+  font-family: 'Manrope', sans-serif;
+}
+
+.hero, .about, .shop, .contact {
+  padding: 120px 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: center;
+  color: #ffb400;
+}
+
+.hero h1 {
+  font-size: 4rem;
+  color: #ff7f00;
+  margin-bottom: 20px;
+}
+
+.hero p {
+  font-size: 1.5rem;
+  color: #ffd600;
+}
+
+section h2 {
+  font-size: 3rem;
+  color: #ff7f00;
+  margin-bottom: 20px;
+}
+
+section p {
+  font-size: 1.2rem;
+  color: #ffd600;
+}
+
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
