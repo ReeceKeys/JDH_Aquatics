@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-import { FaWater, FaFish, FaLeaf } from "react-icons/fa";
 
 const bubbleCount = 50;
 const sectionVariants = {
@@ -9,8 +8,8 @@ const sectionVariants = {
   visible: { opacity: 1, transition: { duration: 1.2, ease: "easeOut" } },
 };
 
-export default function Shop() {
-  const { ref: shopRef, inView: shopInView } = useInView({ threshold: 0.2 });
+export default function Guides() {
+  const { ref: heroRef, inView: heroInView } = useInView({ threshold: 0.2 });
   const [mousePos, setMousePos] = useState({ x: -9999, y: -9999 });
   const [bubbles, setBubbles] = useState([]);
 
@@ -43,7 +42,7 @@ export default function Shop() {
         prev.map((b) => {
           let { x, y, dx, dy, size, rot, rotSpeed, scale, scaleDir, depth } = b;
 
-          // Repel from mouse/finger
+          // Repel from mouse
           const distX = x + size / 2 - mousePos.x;
           const distY = y + size / 2 - mousePos.y;
           const dist = Math.sqrt(distX * distX + distY * distY);
@@ -53,20 +52,19 @@ export default function Shop() {
           dx += (distX / dist) * repelStrength || 0;
           dy += (distY / dist) * repelStrength || 0;
 
-          // Natural drift even without mouse
-          const baseDrift = 0.005 * (1 + depth); // slower gentle upward drift
+          // Natural drift
+          const baseDrift = 0.005 * (1 + depth);
           dy -= baseDrift;
-          dx += (Math.random() - 0.5) * 0.01; // subtle horizontal wobble
+          dx += (Math.random() - 0.5) * 0.01;
 
           // Move bubble
           x += dx;
           y += dy;
 
-          // Slow drift/friction
           dx *= 0.96;
           dy *= 0.96;
 
-          // Rotation wobble
+          // Rotation
           rot += rotSpeed;
 
           // Scale pulsation
@@ -94,14 +92,11 @@ export default function Shop() {
 
   const handleMouseMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
   const handleTouchMove = (e) =>
-    e.touches.length > 0 &&
-    setMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+    e.touches.length > 0 && setMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
 
-  const categories = [
-    { id: 1, title: "Equipment", description: "Filters, pumps, and lighting.", icon: <FaWater /> },
-    { id: 2, title: "Fish & Livestock", description: "Freshwater and saltwater fish.", icon: <FaFish /> },
-    { id: 3, title: "Plants & Decor", description: "Aquatic plants and decorations.", icon: <FaLeaf /> },
-  ];
+  // CTA button style
+  const CTAClass =
+    "inline-block px-10 py-4 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold shadow-xl transition-transform duration-200 hover:scale-105";
 
   return (
     <div
@@ -109,7 +104,7 @@ export default function Shop() {
       onMouseMove={handleMouseMove}
       onTouchMove={handleTouchMove}
     >
-      {/* Bubbles fixed on viewport */}
+      {/* Bubbles */}
       {bubbles.map((bubble, idx) => (
         <div
           key={idx}
@@ -125,66 +120,71 @@ export default function Shop() {
             opacity: bubble.opacity,
             background: `radial-gradient(circle at 35% 35%, rgba(255,255,255,0.8), rgba(255,255,255,0.05), rgba(255,255,255,0))`,
             border: "1px solid rgba(255,255,255,0.2)",
-            boxShadow: "inset -2px -2px 6px rgba(255,255,255,0.2), inset 2px 2px 4px rgba(0,0,0,0.1)",
-            zIndex: 10,
+            boxShadow:
+              "inset -2px -2px 6px rgba(255,255,255,0.2), inset 2px 2px 4px rgba(0,0,0,0.1)",
+            zIndex: Math.round(bubble.depth * 10),
           }}
         />
       ))}
 
       {/* Hero */}
-      <section ref={shopRef} className="text-center py-16 px-6 relative z-20">
+      <section ref={heroRef} className="text-center pt-16 px-6 relative z-20">
         <AnimatePresence>
-          {shopInView && (
+          {heroInView && (
             <motion.div initial="hidden" animate="visible" variants={sectionVariants}>
               <h1 className="text-5xl md:text-6xl font-extrabold text-orange-500 mb-4">
-                Shop JDH Aquatics
+                Guides
               </h1>
-              <p className="text-yellow-200 text-lg md:text-xl mb-12">
-                Find the best aquarium gear and supplies curated by JDH Aquatics.
+              <p className="text-yellow-200 text-lg md:text-xl mb-8 max-w-2xl mx-auto">
+                Explore detailed guides for freshwater and saltwater aquariums.
               </p>
             </motion.div>
           )}
         </AnimatePresence>
       </section>
 
-      {/* Categories */}
-      <section className="flex justify-center items-center gap-8 mb-16 flex-wrap w-full max-w-6xl mx-auto">
-        <AnimatePresence>
-          {categories.map((cat, idx) => (
-            <motion.div
-              key={cat.id}
-              className="flex flex-col items-center p-8 w-64 rounded-xl shadow-xl border-2 border-transparent bg-gray-900"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1, transition: { duration: 0.6 + idx * 0.3 } }}
-              whileHover={{
-                backgroundColor: "#1f1f1f",
-                transition: { type: "spring", stiffness: 300, damping: 20 },
-              }}
-            >
-              <div className="text-6xl text-orange-500 mb-4">{cat.icon}</div>
-              <h3 className="text-xl font-bold text-yellow-300 mb-2">{cat.title}</h3>
-              <p className="text-yellow-200 text-center">{cat.description}</p>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </section>
-
-
-      {/* Amazon Storefront */}
-      <section className="text-center py-16 relative z-20">
-        <motion.a
-          href="https://www.amazon.com/shop/jhaquatics"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block px-12 py-5 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold shadow-xl"
-          initial={{ scale: 1 }}
-          whileHover={{ scale: 1.1 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      {/* Guide Cards */}
+      <section className="w-4/5 mx-auto flex flex-col gap-10 mt-6 relative z-20">
+        {/* Freshwater */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, transition: { duration: 0.6 } }}
+          className="bg-gray-900 p-12 rounded-3xl shadow-xl border border-transparent hover:border-orange-400 transition-colors duration-300"
         >
-          Amazon Storefront
-        </motion.a>
-      </section>
+          <div className="flex flex-col items-center">
+            <h2 className="text-4xl md:text-5xl font-bold text-yellow-300 mb-3">Freshwater</h2>
+            <p className="text-yellow-200 text-lg md:text-xl text-center max-w-3xl mb-6">
+              Tips, techniques, and care guides for freshwater aquariums.
+            </p>
+            <button
+              className={CTAClass}
+              onClick={() => window.location.assign("/guides/freshwater")}
+            >
+              Explore Freshwater
+            </button>
+          </div>
+        </motion.div>
 
+        {/* Saltwater */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, transition: { duration: 0.8 } }}
+          className="bg-gray-900 p-12 rounded-3xl shadow-xl border border-transparent hover:border-orange-400 transition-colors duration-300"
+        >
+          <div className="flex flex-col items-center">
+            <h2 className="text-4xl md:text-5xl font-bold text-yellow-300 mb-3">Saltwater</h2>
+            <p className="text-yellow-200 text-lg md:text-xl text-center max-w-3xl mb-6">
+              Explore saltwater aquarium setups, fish, and coral care.
+            </p>
+            <button
+              className={CTAClass}
+              onClick={() => window.location.assign("/guides/saltwater")}
+            >
+              Explore Saltwater
+            </button>
+          </div>
+        </motion.div>
+      </section>
     </div>
   );
 }

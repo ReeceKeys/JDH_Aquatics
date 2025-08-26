@@ -6,8 +6,7 @@ export default function About() {
           About JDH Aquatics
         </h1>
         <p className="mt-4 text-yellow-400 text-lg md:text-xl">
-          JDH Aquatics is dedicated to sharing knowledge about aquariums, fish, and aquatic plants. 
-          Founded by Reece Harris, the site provides expert guides, tips, and resources for hobbyists of all levels.
+          Coming Soon
         </p>
       </section>
 

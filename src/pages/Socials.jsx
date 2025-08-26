@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useInView } from "react-intersection-observer";
-import { FaWater, FaFish, FaLeaf } from "react-icons/fa";
+import { FaInstagram, FaTiktok, FaYoutube } from "react-icons/fa";
 
 const bubbleCount = 50;
 const sectionVariants = {
@@ -9,8 +8,7 @@ const sectionVariants = {
   visible: { opacity: 1, transition: { duration: 1.2, ease: "easeOut" } },
 };
 
-export default function Shop() {
-  const { ref: shopRef, inView: shopInView } = useInView({ threshold: 0.2 });
+export default function Socials() {
   const [mousePos, setMousePos] = useState({ x: -9999, y: -9999 });
   const [bubbles, setBubbles] = useState([]);
 
@@ -53,10 +51,10 @@ export default function Shop() {
           dx += (distX / dist) * repelStrength || 0;
           dy += (distY / dist) * repelStrength || 0;
 
-          // Natural drift even without mouse
-          const baseDrift = 0.005 * (1 + depth); // slower gentle upward drift
+          // Natural drift
+          const baseDrift = 0.005 * (1 + depth);
           dy -= baseDrift;
-          dx += (Math.random() - 0.5) * 0.01; // subtle horizontal wobble
+          dx += (Math.random() - 0.5) * 0.01;
 
           // Move bubble
           x += dx;
@@ -97,10 +95,10 @@ export default function Shop() {
     e.touches.length > 0 &&
     setMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
 
-  const categories = [
-    { id: 1, title: "Equipment", description: "Filters, pumps, and lighting.", icon: <FaWater /> },
-    { id: 2, title: "Fish & Livestock", description: "Freshwater and saltwater fish.", icon: <FaFish /> },
-    { id: 3, title: "Plants & Decor", description: "Aquatic plants and decorations.", icon: <FaLeaf /> },
+  const socials = [
+    { href: "https://www.instagram.com/jdh_aquatics/", Icon: FaInstagram, glow: "from-purple-400 via-pink-500 to-yellow-400" },
+    { href: "https://www.tiktok.com/@jdhaquatics", Icon: FaTiktok, glow: "from-black via-gray-400 to-white" },
+    { href: "https://www.youtube.com/channel/UCEX8SE5H_3YHcFu88qsjUtg", Icon: FaYoutube, glow: "from-red-500 via-red-400 to-yellow-400" },
   ];
 
   return (
@@ -109,7 +107,7 @@ export default function Shop() {
       onMouseMove={handleMouseMove}
       onTouchMove={handleTouchMove}
     >
-      {/* Bubbles fixed on viewport */}
+      {/* Bubbles (cover full viewport) */}
       {bubbles.map((bubble, idx) => (
         <div
           key={idx}
@@ -131,60 +129,45 @@ export default function Shop() {
         />
       ))}
 
-      {/* Hero */}
-      <section ref={shopRef} className="text-center py-16 px-6 relative z-20">
+      {/* Content */}
+      <div className="relative flex flex-col items-center justify-start pt-16 px-6 min-h-screen z-20">
         <AnimatePresence>
-          {shopInView && (
-            <motion.div initial="hidden" animate="visible" variants={sectionVariants}>
-              <h1 className="text-5xl md:text-6xl font-extrabold text-orange-500 mb-4">
-                Shop JDH Aquatics
-              </h1>
-              <p className="text-yellow-200 text-lg md:text-xl mb-12">
-                Find the best aquarium gear and supplies curated by JDH Aquatics.
-              </p>
-            </motion.div>
-          )}
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={sectionVariants}
+            className="text-center mb-16 w-full max-w-3xl"
+          >
+            <h1 className="text-5xl md:text-6xl font-extrabold text-orange-500 mb-4">Join the Community!</h1>
+            <p className="text-yellow-200 text-lg md:text-xl mb-8 max-w-2xl mx-auto">
+              Stay updated with our latest content and join the community!
+            </p>
+          </motion.div>
         </AnimatePresence>
-      </section>
 
-      {/* Categories */}
-      <section className="flex justify-center items-center gap-8 mb-16 flex-wrap w-full max-w-6xl mx-auto">
-        <AnimatePresence>
-          {categories.map((cat, idx) => (
-            <motion.div
-              key={cat.id}
-              className="flex flex-col items-center p-8 w-64 rounded-xl shadow-xl border-2 border-transparent bg-gray-900"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1, transition: { duration: 0.6 + idx * 0.3 } }}
-              whileHover={{
-                backgroundColor: "#1f1f1f",
-                transition: { type: "spring", stiffness: 300, damping: 20 },
-              }}
+        {/* Social Icons */}
+        <div className="flex space-x-16 items-center">
+          {socials.map(({ href, Icon, glow }, idx) => (
+            <motion.a
+              key={idx}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              initial={{ scale: 1 }}
+              whileHover={{ scale: 1.15}}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 250, damping: 20 }}
+              className="relative flex items-center justify-center w-24 h-24 rounded-xl bg-white/10 backdrop-blur-md shadow-xl hover:bg-white/20"
             >
-              <div className="text-6xl text-orange-500 mb-4">{cat.icon}</div>
-              <h3 className="text-xl font-bold text-yellow-300 mb-2">{cat.title}</h3>
-              <p className="text-yellow-200 text-center">{cat.description}</p>
-            </motion.div>
+              <Icon className="text-white text-4xl drop-shadow-[0_0_15px_rgba(255,255,255,0.7)] hover:drop-shadow-[0_0_40px_rgba(255,255,255,1)]" />
+              <div
+                className={`absolute inset-0 rounded-xl bg-gradient-to-tr ${glow} opacity-30 blur-xl animate-pulse pointer-events-none`}
+              />
+            </motion.a>
           ))}
-        </AnimatePresence>
-      </section>
+        </div>
 
-
-      {/* Amazon Storefront */}
-      <section className="text-center py-16 relative z-20">
-        <motion.a
-          href="https://www.amazon.com/shop/jhaquatics"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block px-12 py-5 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold shadow-xl"
-          initial={{ scale: 1 }}
-          whileHover={{ scale: 1.1 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        >
-          Amazon Storefront
-        </motion.a>
-      </section>
-
+      </div>
     </div>
   );
 }
