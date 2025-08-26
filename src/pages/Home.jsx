@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 
@@ -10,9 +10,39 @@ const sectionVariants = {
 const bubbleCount = 50;
 
 function Home() {
-  const { ref: heroRef, inView: heroInView } = useInView({ threshold: 0.2 });
+  const { ref: heroRef, inView: heroInView } = useInView({
+    threshold: 0.2,
+    triggerOnce: true,
+  });
+
   const [mousePos, setMousePos] = useState({ x: -9999, y: -9999 });
   const [bubbles, setBubbles] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Swipe detection state
+  const startRef = useRef(null);
+  const lastRef = useRef(null);
+
+  const features = [
+    {
+      title: "Aquatic Guides",
+      color: "text-orange-400",
+      ring: "ring-orange-400",
+      text: "Step-by-step care guides for all types of freshwater and saltwater fish.",
+    },
+    {
+      title: "Tank Reviews",
+      color: "text-yellow-400",
+      ring: "ring-yellow-400",
+      text: "In-depth reviews of the latest fish tanks and aquarium equipment.",
+    },
+    {
+      title: "Community",
+      color: "text-orange-500",
+      ring: "ring-orange-500",
+      text: "Join our forums and discussions for tips, tricks, and sharing your tank setups.",
+    },
+  ];
 
   // Initialize bubbles
   useEffect(() => {
@@ -85,10 +115,70 @@ function Home() {
     return () => cancelAnimationFrame(animationFrame);
   }, [mousePos]);
 
-  const handleMouseMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
+  const handleMouseMove = (e) =>
+    setMousePos({ x: e.clientX, y: e.clientY });
   const handleTouchMove = (e) =>
     e.touches.length > 0 &&
     setMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+
+  // --- Swipe handlers (works without Framer drag) ---
+  const onTouchStart = (e) => {
+    const t = e.touches[0];
+    startRef.current = { x: t.clientX, y: t.clientY };
+    lastRef.current = { x: t.clientX, y: t.clientY };
+  };
+
+  const onTouchMove = (e) => {
+    if (!startRef.current) return;
+    const t = e.touches[0];
+    lastRef.current = { x: t.clientX, y: t.clientY };
+  };
+
+  const onTouchEnd = () => {
+    if (!startRef.current || !lastRef.current) {
+      startRef.current = null;
+      lastRef.current = null;
+      return;
+    }
+
+    const dx = lastRef.current.x - startRef.current.x;
+    const dy = lastRef.current.y - startRef.current.y;
+
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0 && currentIndex < features.length - 1) {
+        setCurrentIndex((i) => i + 1);
+      } else if (dx > 0 && currentIndex > 0) {
+        setCurrentIndex((i) => i - 1);
+      }
+    }
+
+    startRef.current = null;
+    lastRef.current = null;
+  };
+
+  // Mouse-based swipe (desktop)
+  const mouseDownRef = useRef(false);
+  const onMouseDown = (e) => {
+    mouseDownRef.current = true;
+    startRef.current = { x: e.clientX, y: e.clientY };
+    lastRef.current = { x: e.clientX, y: e.clientY };
+  };
+  const onMouseMove = (e) => {
+    if (!mouseDownRef.current || !startRef.current) return;
+    lastRef.current = { x: e.clientX, y: e.clientY };
+  };
+  const onMouseUp = () => {
+    if (!mouseDownRef.current) return;
+    mouseDownRef.current = false;
+    onTouchEnd();
+  };
+
+  // Keyboard navigation
+  const onKeyDown = (e) => {
+    if (e.key === "ArrowLeft" && currentIndex > 0) setCurrentIndex((i) => i - 1);
+    if (e.key === "ArrowRight" && currentIndex < features.length - 1)
+      setCurrentIndex((i) => i + 1);
+  };
 
   return (
     <div
@@ -124,73 +214,90 @@ function Home() {
         ref={heroRef}
         className="flex flex-col justify-between flex-grow px-6 pt-24 text-center relative z-20"
       >
-        <AnimatePresence>
-          {heroInView && (
-            <motion.div
-              className="space-y-12 w-full max-w-6xl mx-auto flex flex-col justify-between h-full"
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              variants={sectionVariants}
+        <motion.div
+          className="space-y-12 w-full max-w-6xl mx-auto flex flex-col justify-between h-full"
+          initial="hidden"
+          animate={heroInView ? "visible" : "hidden"}
+          variants={sectionVariants}
+        >
+          {/* Hero */}
+          <div className="space-y-6 mt-4">
+            <h1 className="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-300">
+              JDH Aquatics
+            </h1>
+            <p className="text-xl md:text-2xl max-w-2xl mx-auto text-yellow-200">
+              Create your perfect tank.
+            </p>
+            <motion.a
+              href="/about"
+              className="inline-block px-8 py-4 mt-6 rounded-full bg-gradient-to-r from-orange-500 to-yellow-400 text-black font-bold shadow-lg hover:scale-105 hover:rotate-1 transition-transform duration-500"
+              whileHover={{ scale: 1.1, rotate: 2 }}
             >
-              {/* Hero */}
-              <div className="space-y-6 mt-4">
-                <h1 className="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-300">
-                  JDH Aquatics
-                </h1>
-                <p className="text-xl md:text-2xl max-w-2xl mx-auto text-yellow-200">
-                  Create your perfect tank.
-                </p>
-                <motion.a
-                  href="/about"
-                  className="inline-block px-8 py-4 mt-6 rounded-full bg-gradient-to-r from-orange-500 to-yellow-400 text-black font-bold shadow-lg hover:scale-105 hover:rotate-1 transition-transform duration-500"
-                  whileHover={{ scale: 1.1, rotate: 2 }}
-                >
-                  Learn More
-                </motion.a>
-              </div>
+              Learn More
+            </motion.a>
+          </div>
 
-              {/* Feature Cards */}
-              <div className="grid md:grid-cols-3 gap-8 w-full mt-12">
-                {[
-                  {
-                    title: "Aquatic Guides",
-                    color: "text-orange-400",
-                    ring: "ring-orange-400",
-                    text: "Step-by-step care guides for all types of freshwater and saltwater fish.",
-                  },
-                  {
-                    title: "Tank Reviews",
-                    color: "text-yellow-400",
-                    ring: "ring-yellow-400",
-                    text: "In-depth reviews of the latest fish tanks and aquarium equipment.",
-                  },
-                  {
-                    title: "Community",
-                    color: "text-orange-500",
-                    ring: "ring-orange-500",
-                    text: "Join our forums and discussions for tips, tricks, and sharing your tank setups.",
-                  },
-                ].map((card, i) => (
-                  <motion.div
-                    key={i}
-                    className={`p-6 bg-black/80 rounded-xl shadow-xl transition-all duration-500 ring-2 ${card.ring} hover:ring-yellow-400`}
-                    initial={{ opacity: 0 }}
-                    animate={{
-                      opacity: 1,
-                      transition: { duration: 1, delay: 0.3 + i * 0.2 },
-                    }}
-                  >
-                    <h3 className={`text-2xl font-bold ${card.color} mb-3`}>
-                      {card.title}
-                    </h3>
-                    <p>{card.text}</p>
-                  </motion.div>
-                ))}
+          {/* Mobile: Single fade-only card */}
+          <div className="block md:hidden mt-12 w-full flex flex-col items-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentIndex}
+                className={`w-80 max-w-full p-6 bg-black/80 rounded-xl shadow-xl ring-2 ${features[currentIndex].ring} flex flex-col justify-between min-h-[220px]`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35 }}
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+                onMouseDown={onMouseDown}
+                onMouseMove={onMouseMove}
+                onMouseUp={onMouseUp}
+                onKeyDown={onKeyDown}
+                tabIndex={0}
+                role="region"
+                aria-roledescription="carousel"
+                aria-label={`Feature ${currentIndex + 1} of ${features.length}`}
+              >
+                <h3
+                  className={`text-2xl font-bold ${features[currentIndex].color} mb-3`}
+                >
+                  {features[currentIndex].title}
+                </h3>
+                <p>{features[currentIndex].text}</p>
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Dot indicators */}
+            <div className="flex justify-center mt-4 space-x-2">
+              {features.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentIndex(i)}
+                  className={`w-3 h-3 rounded-full transition-colors ${
+                    i === currentIndex ? "bg-yellow-400" : "bg-gray-500"
+                  }`}
+                  aria-label={`Go to slide ${i + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop: 3-column grid */}
+          <div className="hidden md:grid md:grid-cols-3 gap-8 w-full mt-12">
+            {features.map((card, i) => (
+              <div
+                key={i}
+                className={`p-6 bg-black/80 rounded-xl shadow-xl ring-2 ${card.ring} flex flex-col justify-between min-h-[220px]`}
+              >
+                <h3 className={`text-2xl font-bold ${card.color} mb-3`}>
+                  {card.title}
+                </h3>
+                <p>{card.text}</p>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            ))}
+          </div>
+        </motion.div>
       </section>
     </div>
   );
