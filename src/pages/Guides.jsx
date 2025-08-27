@@ -1,27 +1,58 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+import { FaTint, FaWater } from "react-icons/fa";
 
-const bubbleCount = 50;
 const sectionVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { duration: 1.2, ease: "easeOut" } },
 };
 
+const bubbleCount = 50;
+
 export default function Guides() {
   const { ref: heroRef, inView: heroInView } = useInView({ threshold: 0.2 });
+
   const [mousePos, setMousePos] = useState({ x: -9999, y: -9999 });
   const [bubbles, setBubbles] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const startRef = useRef(null);
+  const lastRef = useRef(null);
+  const mouseDownRef = useRef(false);
+
+  const guides = [
+    {
+      title: "Freshwater",
+      description: "Tips, techniques, and care guides for freshwater aquariums.",
+      color: "text-yellow-400",
+      ring: "ring-white",
+      hover: "hover:ring-yellow-400",
+      desktophover: "hover:-translate-y-3",
+      href: "/guides/freshwater",
+      icon: <FaTint className="text-6xl mb-2" />,
+    },
+    {
+      title: "Saltwater",
+      description: "Explore saltwater aquarium setups, fish, and coral care.",
+      color: "text-orange-400",
+      ring: "ring-white",
+      hover: "hover:ring-orange-400",
+      desktophover: "hover:-translate-y-3",
+      href: "/guides/saltwater",
+      icon: <FaWater className="text-6xl mb-2" />,
+    },
+  ];
 
   // Initialize bubbles
   useEffect(() => {
     const initialBubbles = Array.from({ length: bubbleCount }).map(() => {
       const depth = Math.random();
       return {
-        size: 20 + depth * 40,
+        size: 30 + depth * 50,
         x: Math.random() * window.innerWidth,
         y: Math.random() * window.innerHeight,
-        dx: (Math.random() - 0.5) * 0.2 * (1 + depth),
+        dx: (Math.random() - 0.5) * 0.3 * (1 + depth),
         dy: -((Math.random() * 0.3 + 0.1) * (1 + depth)),
         depth,
         rot: Math.random() * 360,
@@ -42,7 +73,10 @@ export default function Guides() {
         prev.map((b) => {
           let { x, y, dx, dy, size, rot, rotSpeed, scale, scaleDir, depth } = b;
 
-          // Repel from mouse
+          const baseDrift = 0.005 * (1 + depth);
+          dy -= baseDrift;
+          dx += (Math.random() - 0.5) * 0.05;
+
           const distX = x + size / 2 - mousePos.x;
           const distY = y + size / 2 - mousePos.y;
           const dist = Math.sqrt(distX * distX + distY * distY);
@@ -52,27 +86,17 @@ export default function Guides() {
           dx += (distX / dist) * repelStrength || 0;
           dy += (distY / dist) * repelStrength || 0;
 
-          // Natural drift
-          const baseDrift = 0.005 * (1 + depth);
-          dy -= baseDrift;
-          dx += (Math.random() - 0.5) * 0.01;
-
-          // Move bubble
           x += dx;
           y += dy;
 
           dx *= 0.96;
           dy *= 0.96;
-
-          // Rotation
           rot += rotSpeed;
 
-          // Scale pulsation
           scale += 0.002 * scaleDir;
           if (scale > 1.1) scaleDir = -1;
           if (scale < 0.9) scaleDir = 1;
 
-          // Reset if off screen
           if (y + size < 0) {
             y = window.innerHeight + size;
             x = Math.random() * window.innerWidth;
@@ -92,15 +116,54 @@ export default function Guides() {
 
   const handleMouseMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
   const handleTouchMove = (e) =>
-    e.touches.length > 0 && setMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+    e.touches.length > 0 &&
+    setMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
 
-  // CTA button style
-  const CTAClass =
-    "inline-block px-10 py-4 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold shadow-xl transition-transform duration-200 hover:scale-105";
+  // Swipe handlers
+  const onTouchStart = (e) => {
+    const t = e.touches[0];
+    startRef.current = { x: t.clientX, y: t.clientY };
+    lastRef.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchMove = (e) => {
+    if (!startRef.current) return;
+    const t = e.touches[0];
+    lastRef.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = () => {
+    if (!startRef.current || !lastRef.current) return;
+    const dx = lastRef.current.x - startRef.current.x;
+    if (Math.abs(dx) > 40) {
+      if (dx < 0) {
+        // Swipe left → next
+        setCurrentIndex((i) => (i + 1) % guides.length);
+      } else if (dx > 0) {
+        // Swipe right → previous, wrap to end if at start
+        setCurrentIndex((i) => (i - 1 + guides.length) % guides.length);
+}
+
+    }
+    startRef.current = null;
+    lastRef.current = null;
+  };
+  const onMouseDown = (e) => {
+    mouseDownRef.current = true;
+    startRef.current = { x: e.clientX, y: e.clientY };
+    lastRef.current = { x: e.clientX, y: e.clientY };
+  };
+  const onMouseMoveSwipe = (e) => {
+    if (!mouseDownRef.current || !startRef.current) return;
+    lastRef.current = { x: e.clientX, y: e.clientY };
+  };
+  const onMouseUp = () => {
+    if (!mouseDownRef.current) return;
+    mouseDownRef.current = false;
+    onTouchEnd();
+  };
 
   return (
     <div
-      className="relative overflow-hidden min-h-screen bg-black text-yellow-50"
+      className="relative overflow-hidden bg-black text-yellow-50 min-h-screen flex flex-col"
       onMouseMove={handleMouseMove}
       onTouchMove={handleTouchMove}
     >
@@ -122,66 +185,79 @@ export default function Guides() {
             border: "1px solid rgba(255,255,255,0.2)",
             boxShadow:
               "inset -2px -2px 6px rgba(255,255,255,0.2), inset 2px 2px 4px rgba(0,0,0,0.1)",
-            zIndex: Math.round(bubble.depth * 10),
+            zIndex: 10,
           }}
         />
       ))}
 
       {/* Hero */}
-      <section ref={heroRef} className="text-center pt-16 px-6 relative z-20">
-        <AnimatePresence>
-          {heroInView && (
-            <motion.div initial="hidden" animate="visible" variants={sectionVariants}>
-              <h1 className="text-5xl md:text-6xl font-extrabold text-orange-500 mb-4">
-                Guides
-              </h1>
-              <p className="text-yellow-200 text-lg md:text-xl mb-8 max-w-2xl mx-auto">
-                Explore detailed guides for freshwater and saltwater aquariums.
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </section>
-
-      {/* Guide Cards */}
-      <section className="w-4/5 mx-auto flex flex-col gap-10 mt-6 relative z-20">
-        {/* Freshwater */}
+      <section ref={heroRef} className="flex flex-col justify-between flex-grow px-6 pt-24 text-center relative z-20">
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1, transition: { duration: 0.6 } }}
-          className="bg-gray-900 p-12 rounded-3xl shadow-xl border border-transparent hover:border-orange-400 transition-colors duration-300"
+          className="space-y-8 w-full max-w-6xl mx-auto flex flex-col justify-between h-full"
+          initial="hidden"
+          animate={heroInView ? "visible" : "hidden"}
+          variants={sectionVariants}
         >
-          <div className="flex flex-col items-center">
-            <h2 className="text-4xl md:text-5xl font-bold text-yellow-300 mb-3">Freshwater</h2>
-            <p className="text-yellow-200 text-lg md:text-xl text-center max-w-3xl mb-6">
-              Tips, techniques, and care guides for freshwater aquariums.
+          <div className="space-y-4 mt-2 md:space-y-6 md:mt-4 text-center">
+            <h1 className="text-5xl md:text-5xl font-extrabold text-orange-500 leading-snug md:leading-tight">
+              Guides
+            </h1>
+            <p className="text-lg md:text-2xl max-w-xs md:max-w-2xl mx-auto text-yellow-200">
+              From setting up to everyday care!
             </p>
-            <button
-              className={CTAClass}
-              onClick={() => window.location.assign("/guides/freshwater")}
-            >
-              Explore Freshwater
-            </button>
           </div>
-        </motion.div>
 
-        {/* Saltwater */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1, transition: { duration: 0.8 } }}
-          className="bg-gray-900 p-12 rounded-3xl shadow-xl border border-transparent hover:border-orange-400 transition-colors duration-300"
-        >
-          <div className="flex flex-col items-center">
-            <h2 className="text-4xl md:text-5xl font-bold text-yellow-300 mb-3">Saltwater</h2>
-            <p className="text-yellow-200 text-lg md:text-xl text-center max-w-3xl mb-6">
-              Explore saltwater aquarium setups, fish, and coral care.
-            </p>
-            <button
-              className={CTAClass}
-              onClick={() => window.location.assign("/guides/saltwater")}
-            >
-              Explore Saltwater
-            </button>
+
+          {/* Mobile carousel */}
+          <div className="block md:hidden mt-12 w-full flex flex-col items-center">
+            <AnimatePresence mode="wait">
+              <motion.a
+                key={currentIndex}
+                href={guides[currentIndex].href}
+                className={`w-80 max-w-full p-6 bg-black/80 rounded-xl shadow-xl ring-2 ${guides[currentIndex].ring} ${guides[currentIndex].hover} flex flex-col items-center justify-start gap-2 min-h-[220px] transition-colors duration-200`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35 }}
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+                onMouseDown={onMouseDown}
+                onMouseMove={onMouseMoveSwipe}
+                onMouseUp={onMouseUp}
+              >
+                {guides[currentIndex].icon}
+                <h3 className={`text-2xl font-bold ${guides[currentIndex].color} leading-tight`}>
+                  {guides[currentIndex].title}
+                </h3>
+                <p className="text-yellow-200 text-center">{guides[currentIndex].description}</p>
+              </motion.a>
+            </AnimatePresence>
+
+            <div className="flex justify-center mt-4 space-x-2">
+              {guides.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentIndex(i)}
+                  className={`w-3 h-3 rounded-full transition-colors duration-150 ${i === currentIndex ? "bg-yellow-400" : "bg-gray-500"}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop grid */}
+          <div className="hidden md:flex justify-center gap-8 w-4/5 mx-auto mt-12">
+            {guides.map((card, i) => (
+              <a
+                key={i}
+                href={card.href}
+                className={`flex-1 p-6 bg-black/80 rounded-xl shadow-xl ring-2 ${card.ring} ${card.hover} ${card.desktophover} flex flex-col items-center justify-between min-h-[220px] transition-colors duration-200`}
+              >
+                {card.icon}
+                <h3 className={`text-2xl font-bold ${card.color} mb-3`}>{card.title}</h3>
+                <p className="text-yellow-200 text-center">{card.description}</p>
+              </a>
+            ))}
           </div>
         </motion.div>
       </section>

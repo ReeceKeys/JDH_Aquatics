@@ -226,7 +226,7 @@ function Home() {
               JDH Aquatics
             </h1>
             <p className="text-xl md:text-2xl max-w-2xl mx-auto text-yellow-200">
-              Create your perfect tank.
+              Create your perfect aquarium.
             </p>
             <motion.a
               href="/about"

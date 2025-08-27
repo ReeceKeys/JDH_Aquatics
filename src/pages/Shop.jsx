@@ -188,26 +188,40 @@ export default function Shop() {
       {/* Hero */}
       <section ref={shopRef} className="flex flex-col justify-between flex-grow px-6 pt-24 text-center relative z-20">
         <motion.div
-          className="space-y-12 w-full max-w-6xl mx-auto flex flex-col justify-between h-full"
+          className="space-y-8 w-full max-w-6xl mx-auto flex flex-col justify-between h-full"
           initial="hidden"
           animate={shopInView ? "visible" : "hidden"}
           variants={sectionVariants}
         >
-          <div className="space-y-6 mt-4">
-            <h1 className="text-5xl md:text-7xl font-extrabold text-orange-500">
-              Shop JDH Aquatics
+          <div className="space-y-4 mt-1 md:space-y-6 md:mt-4 text-center">
+            <h1 className="text-5xl md:text-5xl font-extrabold text-orange-500 leading-snug md:leading-tight">
+              Shop
             </h1>
-            <p className="text-xl md:text-2xl max-w-2xl mx-auto text-yellow-200">
-              Find the best aquarium gear and supplies curated by JDH Aquatics.
+            <p className="text-lg md:text-2xl max-w-xs md:max-w-2xl mx-auto text-yellow-200">
+              What do I recommend?
             </p>
           </div>
+
+          {/* Storefront button */}
+          <motion.a
+            href="https://www.amazon.com/shop/influencer-ec8b7c77"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block px-12 py-5 mt-12 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold shadow-xl self-center"
+            initial={{ scale: 1 }}
+            whileHover={{ scale: 1.1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          >
+            Amazon Storefront
+          </motion.a>
+
 
           {/* Mobile carousel */}
           <div className="block md:hidden mt-12 w-full flex flex-col items-center">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentIndex}
-                className={`w-80 max-w-full p-6 bg-black/80 rounded-xl shadow-xl ring-2 ${categories[currentIndex].ring} flex flex-col justify-start gap-2 max-w-[80%] min-h-[180px]`}
+                className={`w-80 max-w-full p-6 bg-black/80 rounded-xl shadow-xl ring-2 ${categories[currentIndex].ring} flex flex-col items-center justify-start gap-2 max-w-[80%] min-h-[180px]`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -244,7 +258,7 @@ export default function Shop() {
             {categories.map((card, i) => (
               <div
                 key={i}
-                className={`p-6 bg-black/80 rounded-xl shadow-xl ring-2 ${card.ring} flex flex-col justify-between min-h-[220px]`}
+                className={`p-6 bg-black/80 rounded-xl shadow-xl ring-2 ${card.ring} flex flex-col items-center justify-between min-h-[220px]`}
               >
                 {card.icon}
                 <h3 className={`text-2xl font-bold ${card.color} mb-3`}>{card.title}</h3>
@@ -252,19 +266,6 @@ export default function Shop() {
               </div>
             ))}
           </div>
-
-          {/* Storefront button */}
-          <motion.a
-            href="https://www.amazon.com/shop/jhaquatics"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block px-12 py-5 mt-12 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold shadow-xl self-center"
-            initial={{ scale: 1 }}
-            whileHover={{ scale: 1.1 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          >
-            Amazon Storefront
-          </motion.a>
         </motion.div>
       </section>
     </div>
