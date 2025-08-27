@@ -242,7 +242,7 @@ function Home() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentIndex}
-                className={`w-80 max-w-full p-6 bg-black/80 rounded-xl shadow-xl ring-2 ${features[currentIndex].ring} flex flex-col justify-between min-h-[220px]`}
+                className={`w-80 max-w-full p-6 bg-black/80 rounded-xl shadow-xl ring-2 ${features[currentIndex].ring} flex flex-col justify-start gap-2 max-w-[80%] min-h-[180px]`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -260,11 +260,13 @@ function Home() {
                 aria-label={`Feature ${currentIndex + 1} of ${features.length}`}
               >
                 <h3
-                  className={`text-2xl font-bold ${features[currentIndex].color} mb-3`}
+                  className={`text-2xl font-bold ${features[currentIndex].color} leading-tight m-3`}
                 >
                   {features[currentIndex].title}
                 </h3>
-                <p>{features[currentIndex].text}</p>
+                <p className="text-sm text-yellow-200">
+                  {features[currentIndex].text}
+                </p>
               </motion.div>
             </AnimatePresence>
 

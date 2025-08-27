@@ -1,28 +1,59 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { FaWater, FaFish, FaLeaf } from "react-icons/fa";
 
-const bubbleCount = 50;
 const sectionVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { duration: 1.2, ease: "easeOut" } },
 };
 
+const bubbleCount = 50;
+
 export default function Shop() {
   const { ref: shopRef, inView: shopInView } = useInView({ threshold: 0.2 });
+
   const [mousePos, setMousePos] = useState({ x: -9999, y: -9999 });
   const [bubbles, setBubbles] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const startRef = useRef(null);
+  const lastRef = useRef(null);
+  const mouseDownRef = useRef(false);
+
+  const categories = [
+    {
+      title: "Equipment",
+      color: "text-orange-400",
+      ring: "ring-orange-400",
+      description: "Filters, pumps, and lighting.",
+      icon: <FaWater className="text-6xl mb-2" />,
+    },
+    {
+      title: "Fish & Livestock",
+      color: "text-yellow-400",
+      ring: "ring-yellow-400",
+      description: "Freshwater and saltwater fish.",
+      icon: <FaFish className="text-6xl mb-2" />,
+    },
+    {
+      title: "Plants & Decor",
+      color: "text-orange-500",
+      ring: "ring-orange-500",
+      description: "Aquatic plants and decorations.",
+      icon: <FaLeaf className="text-6xl mb-2" />,
+    },
+  ];
 
   // Initialize bubbles
   useEffect(() => {
     const initialBubbles = Array.from({ length: bubbleCount }).map(() => {
       const depth = Math.random();
       return {
-        size: 20 + depth * 40,
+        size: 30 + depth * 50,
         x: Math.random() * window.innerWidth,
         y: Math.random() * window.innerHeight,
-        dx: (Math.random() - 0.5) * 0.2 * (1 + depth),
+        dx: (Math.random() - 0.5) * 0.3 * (1 + depth),
         dy: -((Math.random() * 0.3 + 0.1) * (1 + depth)),
         depth,
         rot: Math.random() * 360,
@@ -43,7 +74,10 @@ export default function Shop() {
         prev.map((b) => {
           let { x, y, dx, dy, size, rot, rotSpeed, scale, scaleDir, depth } = b;
 
-          // Repel from mouse/finger
+          const baseDrift = 0.005 * (1 + depth);
+          dy -= baseDrift;
+          dx += (Math.random() - 0.5) * 0.05;
+
           const distX = x + size / 2 - mousePos.x;
           const distY = y + size / 2 - mousePos.y;
           const dist = Math.sqrt(distX * distX + distY * distY);
@@ -53,28 +87,17 @@ export default function Shop() {
           dx += (distX / dist) * repelStrength || 0;
           dy += (distY / dist) * repelStrength || 0;
 
-          // Natural drift even without mouse
-          const baseDrift = 0.005 * (1 + depth); // slower gentle upward drift
-          dy -= baseDrift;
-          dx += (Math.random() - 0.5) * 0.01; // subtle horizontal wobble
-
-          // Move bubble
           x += dx;
           y += dy;
 
-          // Slow drift/friction
           dx *= 0.96;
           dy *= 0.96;
-
-          // Rotation wobble
           rot += rotSpeed;
 
-          // Scale pulsation
           scale += 0.002 * scaleDir;
           if (scale > 1.1) scaleDir = -1;
           if (scale < 0.9) scaleDir = 1;
 
-          // Reset if off screen
           if (y + size < 0) {
             y = window.innerHeight + size;
             x = Math.random() * window.innerWidth;
@@ -97,19 +120,49 @@ export default function Shop() {
     e.touches.length > 0 &&
     setMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
 
-  const categories = [
-    { id: 1, title: "Equipment", description: "Filters, pumps, and lighting.", icon: <FaWater /> },
-    { id: 2, title: "Fish & Livestock", description: "Freshwater and saltwater fish.", icon: <FaFish /> },
-    { id: 3, title: "Plants & Decor", description: "Aquatic plants and decorations.", icon: <FaLeaf /> },
-  ];
+  // Swipe handlers
+  const onTouchStart = (e) => {
+    const t = e.touches[0];
+    startRef.current = { x: t.clientX, y: t.clientY };
+    lastRef.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchMove = (e) => {
+    if (!startRef.current) return;
+    const t = e.touches[0];
+    lastRef.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = () => {
+    if (!startRef.current || !lastRef.current) return;
+    const dx = lastRef.current.x - startRef.current.x;
+    if (Math.abs(dx) > 40) {
+      if (dx < 0 && currentIndex < categories.length - 1) setCurrentIndex((i) => i + 1);
+      else if (dx > 0 && currentIndex > 0) setCurrentIndex((i) => i - 1);
+    }
+    startRef.current = null;
+    lastRef.current = null;
+  };
+  const onMouseDown = (e) => {
+    mouseDownRef.current = true;
+    startRef.current = { x: e.clientX, y: e.clientY };
+    lastRef.current = { x: e.clientX, y: e.clientY };
+  };
+  const onMouseMoveSwipe = (e) => {
+    if (!mouseDownRef.current || !startRef.current) return;
+    lastRef.current = { x: e.clientX, y: e.clientY };
+  };
+  const onMouseUp = () => {
+    if (!mouseDownRef.current) return;
+    mouseDownRef.current = false;
+    onTouchEnd();
+  };
 
   return (
     <div
-      className="relative overflow-hidden min-h-screen bg-black text-yellow-50"
+      className="relative overflow-hidden bg-black text-yellow-50 min-h-screen flex flex-col"
       onMouseMove={handleMouseMove}
       onTouchMove={handleTouchMove}
     >
-      {/* Bubbles fixed on viewport */}
+      {/* Bubbles */}
       {bubbles.map((bubble, idx) => (
         <div
           key={idx}
@@ -125,66 +178,95 @@ export default function Shop() {
             opacity: bubble.opacity,
             background: `radial-gradient(circle at 35% 35%, rgba(255,255,255,0.8), rgba(255,255,255,0.05), rgba(255,255,255,0))`,
             border: "1px solid rgba(255,255,255,0.2)",
-            boxShadow: "inset -2px -2px 6px rgba(255,255,255,0.2), inset 2px 2px 4px rgba(0,0,0,0.1)",
+            boxShadow:
+              "inset -2px -2px 6px rgba(255,255,255,0.2), inset 2px 2px 4px rgba(0,0,0,0.1)",
             zIndex: 10,
           }}
         />
       ))}
 
       {/* Hero */}
-      <section ref={shopRef} className="text-center py-16 px-6 relative z-20">
-        <AnimatePresence>
-          {shopInView && (
-            <motion.div initial="hidden" animate="visible" variants={sectionVariants}>
-              <h1 className="text-5xl md:text-6xl font-extrabold text-orange-500 mb-4">
-                Shop JDH Aquatics
-              </h1>
-              <p className="text-yellow-200 text-lg md:text-xl mb-12">
-                Find the best aquarium gear and supplies curated by JDH Aquatics.
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </section>
-
-      {/* Categories */}
-      <section className="flex justify-center items-center gap-8 mb-16 flex-wrap w-full max-w-6xl mx-auto">
-        <AnimatePresence>
-          {categories.map((cat, idx) => (
-            <motion.div
-              key={cat.id}
-              className="flex flex-col items-center p-8 w-64 rounded-xl shadow-xl border-2 border-transparent bg-gray-900"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1, transition: { duration: 0.6 + idx * 0.3 } }}
-              whileHover={{
-                backgroundColor: "#1f1f1f",
-                transition: { type: "spring", stiffness: 300, damping: 20 },
-              }}
-            >
-              <div className="text-6xl text-orange-500 mb-4">{cat.icon}</div>
-              <h3 className="text-xl font-bold text-yellow-300 mb-2">{cat.title}</h3>
-              <p className="text-yellow-200 text-center">{cat.description}</p>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </section>
-
-
-      {/* Amazon Storefront */}
-      <section className="text-center py-16 relative z-20">
-        <motion.a
-          href="https://www.amazon.com/shop/jhaquatics"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block px-12 py-5 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold shadow-xl"
-          initial={{ scale: 1 }}
-          whileHover={{ scale: 1.1 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      <section ref={shopRef} className="flex flex-col justify-between flex-grow px-6 pt-24 text-center relative z-20">
+        <motion.div
+          className="space-y-12 w-full max-w-6xl mx-auto flex flex-col justify-between h-full"
+          initial="hidden"
+          animate={shopInView ? "visible" : "hidden"}
+          variants={sectionVariants}
         >
-          Amazon Storefront
-        </motion.a>
-      </section>
+          <div className="space-y-6 mt-4">
+            <h1 className="text-5xl md:text-7xl font-extrabold text-orange-500">
+              Shop JDH Aquatics
+            </h1>
+            <p className="text-xl md:text-2xl max-w-2xl mx-auto text-yellow-200">
+              Find the best aquarium gear and supplies curated by JDH Aquatics.
+            </p>
+          </div>
 
+          {/* Mobile carousel */}
+          <div className="block md:hidden mt-12 w-full flex flex-col items-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentIndex}
+                className={`w-80 max-w-full p-6 bg-black/80 rounded-xl shadow-xl ring-2 ${categories[currentIndex].ring} flex flex-col justify-start gap-2 max-w-[80%] min-h-[180px]`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35 }}
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+                onMouseDown={onMouseDown}
+                onMouseMove={onMouseMoveSwipe}
+                onMouseUp={onMouseUp}
+                tabIndex={0}
+              >
+                {categories[currentIndex].icon}
+                <h3 className={`text-2xl font-bold ${categories[currentIndex].color} leading-tight`}>
+                  {categories[currentIndex].title}
+                </h3>
+                <p className="text-yellow-200">{categories[currentIndex].description}</p>
+              </motion.div>
+            </AnimatePresence>
+
+            <div className="flex justify-center mt-4 space-x-2">
+              {categories.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentIndex(i)}
+                  className={`w-3 h-3 rounded-full transition-colors ${i === currentIndex ? "bg-yellow-400" : "bg-gray-500"}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop grid */}
+          <div className="hidden md:grid md:grid-cols-3 gap-8 w-full mt-12">
+            {categories.map((card, i) => (
+              <div
+                key={i}
+                className={`p-6 bg-black/80 rounded-xl shadow-xl ring-2 ${card.ring} flex flex-col justify-between min-h-[220px]`}
+              >
+                {card.icon}
+                <h3 className={`text-2xl font-bold ${card.color} mb-3`}>{card.title}</h3>
+                <p>{card.description}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Storefront button */}
+          <motion.a
+            href="https://www.amazon.com/shop/jhaquatics"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block px-12 py-5 mt-12 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold shadow-xl self-center"
+            initial={{ scale: 1 }}
+            whileHover={{ scale: 1.1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          >
+            Amazon Storefront
+          </motion.a>
+        </motion.div>
+      </section>
     </div>
   );
 }
